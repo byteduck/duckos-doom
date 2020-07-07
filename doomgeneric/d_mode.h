@@ -40,7 +40,7 @@ typedef enum
 } GameMission_t;
 
 // The "mode" allows more accurate specification of the game mode we are
-// in: eg. shareware vs. registered.  So doom1.wad and doom.wad are the
+// in: eg. shareware vs. registered.  So DOOM1.WAD and doom.wad are the
 // same mission, but a different mode.
 
 typedef enum

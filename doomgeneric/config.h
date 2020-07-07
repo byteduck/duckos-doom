@@ -34,7 +34,7 @@
 #undef HAVE_LINUX_KD_H
 
 /* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
+#define HAVE_MEMORY_H 1
 
 /* Define to 1 if you have the `mmap' function. */
 #undef HAVE_MMAP
@@ -55,13 +55,13 @@
 #define HAVE_STRING_H 1
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
-#undef HAVE_SYS_STAT_H
+#define HAVE_SYS_STAT_H 1
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #define HAVE_SYS_TYPES_H 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
+#define HAVE_UNISTD_H 1
 
 /* Name of package */
 #define PACKAGE "Doom"
@@ -85,7 +85,7 @@
 #define PACKAGE_VERSION 0.1
 
 /* Change this when you create your awesome forked version */
-#define PROGRAM_PREFIX "doomgeneric"
+#define PROGRAM_PREFIX "duckos"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1

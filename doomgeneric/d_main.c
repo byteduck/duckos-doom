@@ -607,7 +607,7 @@ static char *banners[] =
     "                         "
     "DOOM 2: Hell on Earth v%i.%i"
     "                           ",
-    // doom1.wad
+    // DOOM1.WAD
     "                            "
     "DOOM Shareware Startup v%i.%i"
     "                           ",

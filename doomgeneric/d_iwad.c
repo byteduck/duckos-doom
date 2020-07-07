@@ -799,7 +799,7 @@ char *D_SaveGameIWADName(GameMission_t gamemission)
     // This determines the directory the savegame files get put into.
     //
     // Note that we match on gamemission rather than on IWAD name.
-    // This ensures that doom1.wad and doom.wad saves are stored
+    // This ensures that DOOM1.WAD and doom.wad saves are stored
     // in the same place.
 
     for (i=0; i<arrlen(iwads); ++i)

@@ -1,3 +1,8 @@
+# duckos-doom
+
+A port of [doomgeneric](https://github.com/ozkl/doomgeneric) for [duckOS](https://github.com/byteduck/duckOS/).
+Requires a wad file to play.
+
 # doomgeneric
 The purpose of doomgeneric is to make porting Doom easier.
 Of course Doom is already portable but with doomgeneric it is possible with just a few functions.
