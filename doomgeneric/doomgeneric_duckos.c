@@ -18,46 +18,50 @@
 */
 
 #include <stdio.h>
-#include <errno.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <sys/time.h>
 #include "doomgeneric.h"
 #include "doomkeys.h"
+#include <sys/input.h>
+#include <libpond/pond.h>
 
-//TODO: In m_misc, implement mkdir
-
-int framebufferf, kbdf;
-
-#define KBD_IS_PRESSED 0x80u
-
-typedef struct __attribute__((packed)) KeyEvent {
-		uint16_t scancode;
-		uint8_t key;
-		uint8_t character;
-		uint8_t flags;
-} KeyEvent;
-
-KeyEvent eventbuf;
+PWindow* window;
+struct keyboard_event key_queue[16];
+int key_queue_insert_index = 0;
+int key_queue_dequeue_index = 0;
 
 void DG_Init() {
-	framebufferf = open("/dev/fb0", O_WRONLY);
-	if(framebufferf == -1) {
-		printf("Could not open framebuffer.\n");
-		exit(errno);
-	}
+	if(PInit() < 0)
+		exit(-1);
 
-	kbdf = open("/dev/input/keyboard", O_RDONLY);
-	if(kbdf == -1) {
-		printf("Could not open keyboard.\n");
-		exit(errno);
-	}
-	while(read(kbdf, &eventbuf, sizeof(KeyEvent))); //Get rid of events still in keyboarddevice buffer
+	window = PCreateWindow(NULL, 10, 10, DOOMGENERIC_RESX, DOOMGENERIC_RESY);
+	if(!window)
+		exit(-1);
+
+	free(DG_ScreenBuffer);
+	DG_ScreenBuffer = window->buffer;
 }
 
 void DG_DrawFrame() {
-	write(framebufferf, DG_ScreenBuffer, DOOMGENERIC_RESX * DOOMGENERIC_RESY * 4);
-	lseek(framebufferf, 0, SEEK_SET);
+	PInvalidateWindow(window);
+	while(PHasEvent()) {
+		PEvent evt = PNextEvent();
+		switch(evt.type) {
+			case PEVENT_WINDOW_DESTROY:
+				exit(0);
+			case PEVENT_KEY:
+				if(key_queue_insert_index >= 16)
+					break;
+				struct keyboard_event* kevt = &key_queue[key_queue_insert_index++];
+				kevt->key = evt.key.key;
+				kevt->character = evt.key.character;
+				kevt->scancode = evt.key.scancode;
+				kevt->modifiers = evt.key.modifiers;
+				break;
+			default:
+				break;
+		}
+	}
 }
 
 void DG_SleepMs(uint32_t ms) {
@@ -73,9 +77,19 @@ uint32_t DG_GetTicksMs() {
 }
 
 int DG_GetKey(int* pressed, unsigned char* key) {
-	if(!read(kbdf, &eventbuf, sizeof(KeyEvent))) return 0;
-	*pressed = !!(eventbuf.flags & KBD_IS_PRESSED);
-	switch (eventbuf.key) {
+	if(key_queue_insert_index == 0) {
+		return 0;
+	}
+
+	struct keyboard_event evt = key_queue[key_queue_dequeue_index++];
+	if(key_queue_dequeue_index == key_queue_insert_index) {
+		key_queue_dequeue_index = 0;
+		key_queue_insert_index = 0;
+	}
+
+	*pressed = KBD_ISPRESSED(evt);
+
+	switch (evt.key) {
 		case 0x1C:
 			*key = KEY_ENTER;
 			break;
@@ -104,11 +118,12 @@ int DG_GetKey(int* pressed, unsigned char* key) {
 			*key = KEY_RSHIFT;
 			break;
 		default:
-			*key = eventbuf.character;
+			*key = evt.character;
 			break;
 	}
 	return 1;
 }
 
 void DG_SetWindowTitle(const char * title) {
+	//TODO
 }
