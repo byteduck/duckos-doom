@@ -17,7 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <stdio.h>
+#include <cstdio>
 #include <fcntl.h>
 #include <sys/time.h>
 #include "doomgeneric.h"
@@ -26,30 +26,32 @@
 #include <libpond/pond.h>
 
 PWindow* window;
+PContext* pond;
 struct keyboard_event key_queue[16];
 int key_queue_insert_index = 0;
 int key_queue_dequeue_index = 0;
 
-void DG_Init() {
-	if(PInit() < 0)
+extern "C" void DG_Init() {
+	pond = PContext::init();
+	if(!pond)
 		exit(-1);
 
-	window = PCreateWindow(NULL, 10, 10, DOOMGENERIC_RESX, DOOMGENERIC_RESY);
+	window = pond->create_window(nullptr, 10, 10, DOOMGENERIC_RESX, DOOMGENERIC_RESY);
 	if(!window)
 		exit(-1);
 
 	free(DG_ScreenBuffer);
-	DG_ScreenBuffer = window->buffer;
+	DG_ScreenBuffer = window->framebuffer.data;
 }
 
-void DG_DrawFrame() {
-	PInvalidateWindow(window);
-	while(PHasEvent()) {
-		PEvent evt = PNextEvent();
+extern "C" void DG_DrawFrame() {
+	window->invalidate();
+	while(pond->has_event()) {
+		PEvent evt = pond->next_event();
 		switch(evt.type) {
 			case PEVENT_WINDOW_DESTROY:
 				exit(0);
-			case PEVENT_KEY:
+			case PEVENT_KEY: {
 				if(key_queue_insert_index >= 16)
 					break;
 				struct keyboard_event* kevt = &key_queue[key_queue_insert_index++];
@@ -58,25 +60,26 @@ void DG_DrawFrame() {
 				kevt->scancode = evt.key.scancode;
 				kevt->modifiers = evt.key.modifiers;
 				break;
+			}
 			default:
 				break;
 		}
 	}
 }
 
-void DG_SleepMs(uint32_t ms) {
+extern "C" void DG_SleepMs(uint32_t ms) {
 	//TODO
 }
 
 struct timeval timestorage;
 struct timezone tzstorage;
 
-uint32_t DG_GetTicksMs() {
+extern "C" uint32_t DG_GetTicksMs() {
 	gettimeofday(&timestorage, &tzstorage);
 	return timestorage.tv_usec / 1000 + timestorage.tv_sec * 1000;
 }
 
-int DG_GetKey(int* pressed, unsigned char* key) {
+extern "C" int DG_GetKey(int* pressed, unsigned char* key) {
 	if(key_queue_insert_index == 0) {
 		return 0;
 	}
@@ -124,6 +127,6 @@ int DG_GetKey(int* pressed, unsigned char* key) {
 	return 1;
 }
 
-void DG_SetWindowTitle(const char * title) {
-	//TODO
+extern "C" void DG_SetWindowTitle(const char * title) {
+	window->set_title(title);
 }
