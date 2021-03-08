@@ -73,6 +73,7 @@
 #include "statdump.h"
 
 #include "d_main.h"
+#include "doomgeneric.h"
 
 //
 // D-DoomLoop()
@@ -324,7 +325,9 @@ void D_Display (void)
 			       , 0, 0, SCREENWIDTH, SCREENHEIGHT, tics);
 	I_UpdateNoBlit ();
 	M_Drawer ();                            // menu is drawn even on top of wipes
+	DG_Update();
 	I_FinishUpdate ();                      // page flip or blit buffer
+	DG_Update();
     } while (!done);
 }
 
@@ -441,10 +444,14 @@ void D_DoomLoop (void)
 
     while (1)
     {
+    	DG_Update();
+
 		// frame syncronous IO operations
 		I_StartFrame ();
 
 		TryRunTics (); // will run at least one tic
+
+		DG_Update();
 
 		S_UpdateSounds (players[consoleplayer].mo);// move positional sounds
 

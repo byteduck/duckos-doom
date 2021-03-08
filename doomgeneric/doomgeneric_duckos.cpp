@@ -23,52 +23,63 @@
 #include "doomgeneric.h"
 #include "doomkeys.h"
 #include <sys/input.h>
-#include <libpond/pond.h>
+#include <libui/libui.h>
+#include <unistd.h>
 
-PWindow* window;
-PContext* pond;
-struct keyboard_event key_queue[16];
+
 int key_queue_insert_index = 0;
 int key_queue_dequeue_index = 0;
+struct keyboard_event key_queue[16];
+
+class DoomWidget: public UI::Widget {
+public:
+
+	DoomWidget() {
+	}
+
+	//Widget
+	Dimensions preferred_size() override {
+		return {DOOMGENERIC_RESX, DOOMGENERIC_RESY};
+	}
+
+	void do_repaint(const UI::DrawContext& ctx) override {
+		Image fb(DG_ScreenBuffer, DOOMGENERIC_RESX, DOOMGENERIC_RESY);
+		ctx.framebuffer().copy_noalpha(fb, {0, 0, DOOMGENERIC_RESX, DOOMGENERIC_RESY}, {0, 0});
+	}
+
+	bool on_keyboard(Pond::KeyEvent evt) override {
+		if(key_queue_insert_index >= 16)
+			return false;
+		struct keyboard_event* kevt = &key_queue[key_queue_insert_index++];
+		kevt->key = evt.key;
+		kevt->character = evt.character;
+		kevt->scancode = evt.scancode;
+		kevt->modifiers = evt.modifiers;
+		return true;
+	}
+};
+
+DoomWidget* widget;
+UI::Window* window;
 
 extern "C" void DG_Init() {
-	pond = PContext::init();
-	if(!pond)
-		exit(-1);
+	UI::init(NULL, NULL);
 
-	window = pond->create_window(nullptr, 10, 10, DOOMGENERIC_RESX, DOOMGENERIC_RESY);
-	if(!window)
-		exit(-1);
-
-	free(DG_ScreenBuffer);
-	DG_ScreenBuffer = window->framebuffer.data;
+	window = UI::Window::create();
+	widget = new DoomWidget;
+	window->set_contents(widget);
+	window->show();
 }
 
 extern "C" void DG_DrawFrame() {
-	window->invalidate();
-	while(pond->has_event()) {
-		PEvent evt = pond->next_event();
-		switch(evt.type) {
-			case PEVENT_WINDOW_DESTROY:
-				exit(0);
-			case PEVENT_KEY: {
-				if(key_queue_insert_index >= 16)
-					break;
-				struct keyboard_event* kevt = &key_queue[key_queue_insert_index++];
-				kevt->key = evt.key.key;
-				kevt->character = evt.key.character;
-				kevt->scancode = evt.key.scancode;
-				kevt->modifiers = evt.key.modifiers;
-				break;
-			}
-			default:
-				break;
-		}
-	}
+	widget->repaint();
 }
 
 extern "C" void DG_SleepMs(uint32_t ms) {
-	//TODO
+}
+
+extern "C" void DG_Update() {
+	UI::update(0);
 }
 
 struct timeval timestorage;
