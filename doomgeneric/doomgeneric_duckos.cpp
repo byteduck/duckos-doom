@@ -30,6 +30,7 @@
 int key_queue_insert_index = 0;
 int key_queue_dequeue_index = 0;
 struct keyboard_event key_queue[16];
+bool key_states[256] = {false};
 
 class DoomWidget: public UI::Widget {
 public:
@@ -44,12 +45,17 @@ public:
 
 	void do_repaint(const UI::DrawContext& ctx) override {
 		Image fb(DG_ScreenBuffer, DOOMGENERIC_RESX, DOOMGENERIC_RESY);
-		ctx.framebuffer().copy_noalpha(fb, {0, 0, DOOMGENERIC_RESX, DOOMGENERIC_RESY}, {0, 0});
+		ctx.framebuffer().copy(fb, {0, 0, DOOMGENERIC_RESX, DOOMGENERIC_RESY}, {0, 0});
 	}
 
 	bool on_keyboard(Pond::KeyEvent evt) override {
 		if(key_queue_insert_index >= 16)
 			return false;
+		//Don't insert multiple events for a held-down key
+		bool pressed = KBD_ISPRESSED(evt);
+		if(key_states[evt.key] && pressed)
+			return true;
+		key_states[evt.key] = pressed;
 		struct keyboard_event* kevt = &key_queue[key_queue_insert_index++];
 		kevt->key = evt.key;
 		kevt->character = evt.character;
@@ -76,6 +82,7 @@ extern "C" void DG_DrawFrame() {
 }
 
 extern "C" void DG_SleepMs(uint32_t ms) {
+	usleep(ms * 1000);
 }
 
 extern "C" void DG_Update() {
